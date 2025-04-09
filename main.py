@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 
+from match import Match
 from player import Player
 
 players = []
@@ -42,7 +43,7 @@ GUILD_ID = discord.Object(id = 806414853749211186)
 ########################################################################################################################
 @client.tree.command(name='add_player', description='Add player to the tournament', guild=GUILD_ID)
 async def add_player(interaction: discord.Interaction, name: discord.Member, faction: str, tv: int, coins: int):
-    player = Player(name, faction, tv, coins)
+    player = Player(name.name, faction, tv, coins)
     player.save_to_csv(players)
     await interaction.response.send_message(f'{name}\'s {faction} team added to player list')
 ########################################################################################################################
@@ -85,7 +86,6 @@ async def add_draw(interaction: discord.Interaction):
 @client.tree.command(name='show_players', description='Shows all added players', guild=GUILD_ID)
 async def show_players(interaction: discord.Interaction):
     Player.load_players_from_csv(players)
-    print(f'{len(players)} players in list')
     embeds = []
     for player in players:
         embed = discord.Embed(title=player.name.title(), description=f'Faction: {player.faction.title()}')
@@ -95,18 +95,32 @@ async def show_players(interaction: discord.Interaction):
         embeds.append(embed)
     await interaction.response.send_message(embeds=embeds)
 ########################################################################################################################
-# @client.tree.command(name='add_match', description='Add match to the tournament', guild=GUILD_ID)
-# async def add_match(interaction: discord.Interaction, home_player: discord.Member, away_player: discord.Member):
-#     matches.append(Match(home_player, away_player))
-#     await interaction.response.send_message(f'{home_player.name.title()} vs {away_player.name.title()} Added')
+@client.tree.command(name='add_match', description='Add match to the tournament', guild=GUILD_ID)
+async def add_match(interaction: discord.Interaction, home_player: discord.Member, away_player: discord.Member):
+    temp = ''
+    players_names = []
+    for player in players:
+        players_names.append(player.name)
+
+    if home_player.name in players_names and away_player.name in players_names:
+        home = players[players_names.index(home_player.name)]
+        away = players[players_names.index(away_player.name)]
+        matches.append(Match(home, away))
+        await interaction.response.send_message(f'{home_player.name} vs {away_player.name} added to matches')
+    else:
+        print(players_names)
+        print(f'{away_player.name} vs {home_player.name}')
+        if home_player.name not in players_names:
+            await interaction.response.send_message(f'{home_player.name} is not a registered coach')
+        if away_player.name not in players_names:
+            await interaction.response.send_message(f'{away_player.name} is not a registered coach')
 ########################################################################################################################
-# @client.tree.command(name='show_matches', description='Shows added matches', guild=GUILD_ID)
-# async def show_matches(interaction: discord.Interaction):
-#     for match in matches:
-#         embed = discord.Embed(title=f'{match.home_player.name} vs {match.away_player.name}',
-#                               description=f'{match.home_player.faction} vs {match.away_player.faction}',
-#                               thumbnail=match.home_player.avatar)
-#         await interaction.response.send_message(embed=embed)
+@client.tree.command(name='show_matches', description='Shows added matches', guild=GUILD_ID)
+async def show_matches(interaction: discord.Interaction):
+    for match in matches:
+        embed = discord.Embed(title=f'{match.home_player.name} vs {match.away_player.name}',
+                              description=f'{match.home_player.faction} vs {match.away_player.faction}')
+        await interaction.response.send_message(embed=embed)
 ########################################################################################################################
 #Used to clear the entire message history of the text channel
 @client.tree.command(name='purge_chat', description='Clears message history', guild=GUILD_ID)
