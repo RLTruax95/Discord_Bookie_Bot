@@ -46,6 +46,42 @@ async def add_player(interaction: discord.Interaction, name: discord.Member, fac
     player.save_to_csv(players)
     await interaction.response.send_message(f'{name}\'s {faction} team added to player list')
 ########################################################################################################################
+@client.tree.command(name='add_win', description='Add a win to the players record', guild=GUILD_ID)
+async def add_win(interaction: discord.Interaction):
+    players_names = []
+    for player in players:
+        players_names.append(player.name)
+    if interaction.user.name in players_names:
+        players[players_names.index(interaction.user.name)].add_win()
+        await interaction.response.send_message(f'Congrats on your win, {interaction.user.name}!')
+    else:
+        await interaction.response.send_message(f'{interaction.user.name} is not a registered coach')
+    Player.update_csv(players)
+########################################################################################################################
+@client.tree.command(name='add_loss', description='Add a loss to the players record', guild=GUILD_ID)
+async def add_loss(interaction: discord.Interaction):
+    players_names = []
+    for player in players:
+        players_names.append(player.name)
+    if interaction.user.name in players_names:
+        players[players_names.index(interaction.user.name)].add_loss()
+        await interaction.response.send_message(f'Sorry for your loss, {interaction.user.name}!')
+    else:
+        await interaction.response.send_message(f'{interaction.user.name} is not a registered coach')
+    Player.update_csv(players)
+########################################################################################################################
+@client.tree.command(name='add_draw', description='Add a draw to the players record', guild=GUILD_ID)
+async def add_draw(interaction: discord.Interaction):
+    players_names = []
+    for player in players:
+        players_names.append(player.name)
+    if interaction.user.name in players_names:
+        players[players_names.index(interaction.user.name)].add_draw()
+        await interaction.response.send_message(f'It was an even match, {interaction.user.name}!')
+    else:
+        await interaction.response.send_message(f'{interaction.user.name} is not a registered coach')
+    Player.update_csv(players)
+########################################################################################################################
 @client.tree.command(name='show_players', description='Shows all added players', guild=GUILD_ID)
 async def show_players(interaction: discord.Interaction):
     Player.load_players_from_csv(players)
@@ -55,6 +91,7 @@ async def show_players(interaction: discord.Interaction):
         embed = discord.Embed(title=player.name.title(), description=f'Faction: {player.faction.title()}')
         embed.add_field(name='Team Value:', value=player.TV)
         embed.add_field(name='Coins:', value=player.coins)
+        embed.add_field(name='W/D/L:', value=f'{player.wins}/{player.draws}/{player.losses}')
         embeds.append(embed)
     await interaction.response.send_message(embeds=embeds)
 ########################################################################################################################
