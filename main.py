@@ -14,6 +14,7 @@ class Client(commands.Bot):
     async def on_ready(self):
         print(f'Logged on as {self.user}!')
         Player.load_players_from_csv(players)
+        Match.load_matches_from_csv(matches, players)
 
         try:
             #Used to synch the slash commands to the discord server
@@ -95,46 +96,87 @@ async def show_players(interaction: discord.Interaction):
         embeds.append(embed)
     await interaction.response.send_message(embeds=embeds)
 ########################################################################################################################
-@client.tree.command(name='add_match', description='Add match to the tournament', guild=GUILD_ID)
-async def add_match(interaction: discord.Interaction, home_player: discord.Member, away_player: discord.Member):
-    temp = ''
-    players_names = []
-    for player in players:
-        players_names.append(player.name)
+async def player_autocomplete(interaction: discord.Interaction,current: str,) -> list[app_commands.Choice[str]]:
+    player_names = [player.name for player in players]
+    return [
+        app_commands.Choice(name=player, value=player)
+        for player in player_names if current.lower() in player.lower()
+    ]
 
-    if home_player.name in players_names and away_player.name in players_names:
-        home = players[players_names.index(home_player.name)]
-        away = players[players_names.index(away_player.name)]
-        matches.append(Match(home, away))
-        await interaction.response.send_message(f'{home_player.name} vs {away_player.name} added to matches')
+async def match_autocomplete(interaction: discord.Interaction, current: str) -> list[app_commands.Choice[str]]:
+    pending_matches = [match.match_name for match in matches]
+    return [
+        app_commands.Choice(name=match, value=match)
+    for match in pending_matches if current.lower() in match.lower()]
+
+async def parlay_autocomplete(interaction: discord.Interaction, current: str) -> list[app_commands.Choice[str]]:
+    match = interaction.namespace.match
+    match_obj = next((m for m in matches if m.match_name == match), None)
+    if not match_obj:
+        return []
+
+    player_names = [match_obj.home_player.name, match_obj.away_player.name]
+    return [
+        app_commands.Choice(name=player, value=player)
+        for player in player_names if current.lower() in player.lower()
+    ]
+########################################################################################################################
+@client.tree.command(name='add_match', description='Add match to the tournament', guild=GUILD_ID)
+@app_commands.autocomplete(home_player=player_autocomplete, away_player=player_autocomplete)
+async def add_match(interaction: discord.Interaction, home_player: str, away_player: str):
+    home_player_obj = next((player for player in players if player.name == home_player), None)
+    away_player_obj = next((player for player in players if player.name == away_player), None)
+
+    if home_player_obj and away_player_obj:
+        temp_match = Match(home_player_obj, away_player_obj)
+        temp_match.save_to_csv(matches)
+        matches.append(temp_match)
+        await interaction.response.send_message(f'{home_player_obj.name} vs {away_player_obj.name} added to matches')
     else:
-        print(players_names)
-        print(f'{away_player.name} vs {home_player.name}')
-        if home_player.name not in players_names:
-            await interaction.response.send_message(f'{home_player.name} is not a registered coach')
-        if away_player.name not in players_names:
-            await interaction.response.send_message(f'{away_player.name} is not a registered coach')
+        if not home_player_obj:
+            await interaction.response.send_message(f'{home_player} is not a registered coach')
+        if not away_player_obj:
+            await interaction.response.send_message(f'{away_player} is not a registered coach')
 ########################################################################################################################
 @client.tree.command(name='show_matches', description='Shows added matches', guild=GUILD_ID)
 async def show_matches(interaction: discord.Interaction):
+    Match.load_matches_from_csv(matches,players)
+    embeds = []
     for match in matches:
         embed = discord.Embed(title=f'{match.home_player.name} vs {match.away_player.name}',
                               description=f'{match.home_player.faction} vs {match.away_player.faction}')
-        await interaction.response.send_message(embed=embed)
+        embeds.append(embed)
+    await interaction.response.send_message(embeds=embeds)
 ########################################################################################################################
 #Used to clear the entire message history of the text channel
 @client.tree.command(name='purge_chat', description='Clears message history', guild=GUILD_ID)
 async def purge_chat(interaction: discord.Interaction):
     await interaction.response.defer(ephemeral=True)
     try:
-        # Purge messages in the channel
-        deleted = await interaction.channel.purge(limit=None)
+        if interaction.permissions.administrator:
+            # Purge messages in the channel
+            deleted = await interaction.channel.purge(limit=None)
+            await interaction.followup.send(f"Successfully deleted {len(deleted)} messages.", ephemeral=True)
+        else:
+            await interaction.followup.send(f"Only administrators have permission to purge messages in this channel.")
 
-        # Send an invisible (ephemeral) confirmation message
-        await interaction.followup.send(f"Successfully deleted {len(deleted)} messages.", ephemeral=True)
     except discord.Forbidden:
         await interaction.followup.send("I don't have permission to delete messages in this channel.", ephemeral=True)
     except discord.HTTPException as e:
         await interaction.followup.send(f"An error occurred: {e}", ephemeral=True)
+########################################################################################################################
+@client.tree.command(name='place_bet', description='Place a bet on the desired match', guild=GUILD_ID)
+@app_commands.autocomplete(match=match_autocomplete, parlay=parlay_autocomplete)
+async def place_bet(interaction: discord.Interaction, match: str, parlay: str, amount: int):
+    match_obj = next((m for m in matches if m.match_name == match), None)
+    if not match_obj:
+        await interaction.response.send_message(f'Match {match} does not exist')
+        return
+
+    if parlay not in [match_obj.home_player.name, match_obj.away_player.name]:
+        await interaction.response.send_message(f'Parlay {parlay} is not a valid parlay')
+        return
+
+    await interaction.response.send_message(f'{interaction.user} placed a {amount} gold bet on {parlay} in \'{match_obj.match_name}\'')
 ########################################################################################################################
 client.run('MTM1ODk2MDk4NTY2MjI5MjExMg.GMIq8J.Dn4fTHERIXtEAFabwfXdvo-tZqmIj3Yh9wlL9U')
