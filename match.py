@@ -17,12 +17,15 @@ class Match:
         filename = 'matches.txt'
         file_exists = os.path.isfile(filename)
 
+        #open the file and create a csv writer instance
         with open(filename, 'a', newline='') as file:
             writer = csv.writer(file)
 
+            #Create the csv file if it doesn't exist
             if not file_exists:
                 writer.writerow(['home_player', 'away_player'])
 
+            #write the player information to the csv file
             writer.writerow([self.home_player.name, self.away_player.name])
             match_list.append(self)
 
@@ -33,6 +36,7 @@ class Match:
         """
         filename = 'matches.txt'
 
+        #open the csv file, clear the data, and rewrite the whole list to the file again
         with open(filename, 'w', newline='') as file:
             writer = csv.writer(file)
             writer.writerow(['home_player', 'away_player'])
@@ -49,9 +53,13 @@ class Match:
         filename = 'matches.txt'
         match_list.clear()
 
+        #clear the currently saved list and reload all the csv data
         try:
+            #open the csv file and create a csv reader
             with open(filename, 'r') as file:
                 reader = csv.DictReader(file)
+
+                #assign the csv headers to the match instance variables
                 for row in reader:
                     home_player_name = row['home_player']
                     away_player_name = row['away_player']
@@ -63,6 +71,7 @@ class Match:
                         if p.name == away_player_name:
                             temp_away_player = p
 
+                    #if both values exist, create a match instance with these values and add it to the list
                     if temp_home_player and temp_away_player:
                         match = Match(temp_home_player, temp_away_player)
                         match_list.append(match)
