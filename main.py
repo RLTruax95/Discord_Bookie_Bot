@@ -149,7 +149,7 @@ async def show_matches(interaction: discord.Interaction):
     await interaction.response.send_message(embeds=embeds)
 ########################################################################################################################
 #Used to clear the entire message history of the text channel
-@client.tree.command(name='purge_chat', description='Clears message history', guild=GUILD_ID)
+@client.tree.command(name='purge_chat', description='Clears message history (must be admin)', guild=GUILD_ID)
 async def purge_chat(interaction: discord.Interaction):
     await interaction.response.defer(ephemeral=True)
     try:
