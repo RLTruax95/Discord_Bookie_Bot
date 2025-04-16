@@ -19,6 +19,7 @@ class Player:
         filename = 'players.txt'
         file_exists = os.path.isfile(filename)
 
+        #open the file and create a csv writer instance
         with open(filename, 'a', newline='') as file:
             writer = csv.writer(file)
 
@@ -37,8 +38,8 @@ class Player:
         :param player_list: The list to which the Player instance will be appended.
         """
         filename = 'players.txt'
-        file_exists = os.path.isfile(filename)
 
+        #open the csv file and
         with open(filename, 'w', newline='') as file:
             writer = csv.writer(file)
             writer.writerow(['Name', 'Faction', 'TV', 'Coins', 'Wins', 'Draws', 'Losses'])
@@ -51,12 +52,16 @@ class Player:
         Reads player data from a CSV file and stores it in the provided list as Player objects.
         :param player_list: The list to store Player objects in.
         """
+        #clear the list of all old data
         filename = 'players.txt'
         player_list.clear()  # Clear the list before loading new data
 
         try:
+            #open the file and create a csv reader
             with open(filename, 'r') as file:
                 reader = csv.DictReader(file)  # Use DictReader to handle headers
+
+                #iterate through the csv file and pull the data out by row
                 for row in reader:
                     # Create a Player object using data from the CSV row
                     player = Player(
@@ -76,6 +81,7 @@ class Player:
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
 
+    #functions allowing a player to edit their scores
     def add_win(self, num = 1):
         self.wins += num
 
