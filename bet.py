@@ -5,9 +5,9 @@ from match import Match
 from player import Player
 
 class Bet:
-    def __init__(self, match: Match, parlay: Player, wager: int):
+    def __init__(self, match: Match, parlay, wager: int):
         self.match_name = match.match_name
-        self.parlay = parlay.name
+        self.parlay = parlay
         self.wager = wager
 
     def save_to_csv(self, bet_list):

@@ -4,9 +4,11 @@ from discord import app_commands
 
 from match import Match
 from player import Player
+from bet import Bet
 
 players = []
 matches = []
+bets = []
 
 class Client(commands.Bot):
 ########################################################################################################################
@@ -15,6 +17,7 @@ class Client(commands.Bot):
         print(f'Logged on as {self.user}!')
         Player.load_players_from_csv(players)
         Match.load_matches_from_csv(matches, players)
+        Bet.load_bets_from_csv(bets, matches, players)
 
         try:
             #Used to synch the slash commands to the discord server
@@ -176,6 +179,9 @@ async def place_bet(interaction: discord.Interaction, match: str, parlay: str, a
     if parlay not in [match_obj.home_player.name, match_obj.away_player.name]:
         await interaction.response.send_message(f'Parlay {parlay} is not a valid parlay')
         return
+
+    temp_bet = Bet(match_obj, parlay, amount)
+    temp_bet.save_to_csv(bets)
 
     await interaction.response.send_message(f'{interaction.user} placed a {amount} gold bet on {parlay} in \'{match_obj.match_name}\'')
 ########################################################################################################################
