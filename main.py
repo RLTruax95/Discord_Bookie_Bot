@@ -180,9 +180,25 @@ async def place_bet(interaction: discord.Interaction, match: str, parlay: str, a
         await interaction.response.send_message(f'Parlay {parlay} is not a valid parlay')
         return
 
-    temp_bet = Bet(match_obj, parlay, amount)
+    temp_bet = Bet(match_obj, parlay, amount, interaction.user)
     temp_bet.save_to_csv(bets)
 
     await interaction.response.send_message(f'{interaction.user} placed a {amount} gold bet on {parlay} in \'{match_obj.match_name}\'')
+########################################################################################################################
+@client.tree.command(name='show_bets', description='Shows the bets for a specified match', guild=GUILD_ID)
+@app_commands.autocomplete(match=match_autocomplete)
+async def show_bets(interaction: discord.Interaction, match: str):
+    Match.load_matches_from_csv(matches,players)
+    Bet.load_bets_from_csv(bets,matches,players)
+    embeds = []
+    for bet in bets:
+        if bet.match_name == match:
+            embed = discord.Embed(title=f'{match}',
+                              description=f'{bet.gambler} - {bet.wager} on {bet.parlay.name}')
+        embeds.append(embed)
+    if embeds:
+        await interaction.response.send_message(embeds=embeds)
+    else:
+        await interaction.response.send_message('No bets found')
 ########################################################################################################################
 client.run('MTM1ODk2MDk4NTY2MjI5MjExMg.GMIq8J.Dn4fTHERIXtEAFabwfXdvo-tZqmIj3Yh9wlL9U')

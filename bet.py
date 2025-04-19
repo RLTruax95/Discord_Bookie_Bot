@@ -5,10 +5,11 @@ from match import Match
 from player import Player
 
 class Bet:
-    def __init__(self, match: Match, parlay, wager: int):
+    def __init__(self, match: Match, parlay, wager: int, gambler):
         self.match_name = match.match_name
         self.parlay = parlay
         self.wager = wager
+        self.gambler = gambler
 
     def save_to_csv(self, bet_list):
         """
@@ -24,10 +25,10 @@ class Bet:
 
             #Create the csv file if it doesn't exist
             if not file_exists:
-                writer.writerow(['match_name', 'parlay', 'wager'])
+                writer.writerow(['match_name', 'parlay', 'wager', 'gambler'])
 
             #write the player information to the csv file
-            writer.writerow([self.match_name, self.parlay, self.wager])
+            writer.writerow([self.match_name, self.parlay, self.wager, self.gambler])
             bet_list.append(self)
 
     @staticmethod
@@ -40,9 +41,9 @@ class Bet:
         # open the csv file, clear the data, and rewrite the whole list to the file again
         with open(filename, 'w', newline='') as file:
             writer = csv.writer(file)
-            writer.writerow(['match_name', 'parlay', 'wager'])
+            writer.writerow(['match_name', 'parlay', 'wager', 'gambler'])
             for bet in bet_list:
-                writer.writerow([bet.match_name, bet.parlay, bet.wager])
+                writer.writerow([bet.match_name, bet.parlay, bet.wager, bet.gambler])
 
     @staticmethod
     def load_bets_from_csv(bet_list, match_list: list[Match], player_list: list[Player]):
@@ -65,20 +66,21 @@ class Bet:
                     match_name = row['match_name']
                     parlay_name = row['parlay']
                     wager = row['wager']
+                    gambler = row['gambler']
 
                     for match in match_list:
                         if match.match_name == match_name:
                             temp_match: Match = match
 
                     # Find the Player objects from player_list
-                    if parlay_name == temp_match.home_player or parlay_name == temp_match.away_player:
+                    if parlay_name == temp_match.home_player.name or parlay_name == temp_match.away_player.name:
                         for player in player_list:
                             if player.name == parlay_name:
                                 temp_parlay = player
 
                     # if both values exist, create a match instance with these values and add it to the list
                     if temp_match and temp_parlay:
-                        bet = Bet(temp_match, temp_parlay, wager)
+                        bet = Bet(temp_match, temp_parlay, wager, gambler)
                         bet_list.append(bet)
                     else:
                         print(f"Warning: Could not find data for the bet")
