@@ -181,8 +181,17 @@ async def place_bet(interaction: discord.Interaction, match: str, parlay: str, a
         await interaction.response.send_message(f'Parlay {parlay} is not a valid parlay')
         return
 
+    for player in players:
+        if player.name == interaction.user.name:
+            if amount > player.coins:
+                await interaction.response.send_message('You dont have enough coins for this bet')
+                return
+            else:
+                player.coins -= amount
+
     temp_bet = Bet(match_obj, parlay, amount, interaction.user)
     temp_bet.save_to_csv(bets)
+    Player.update_csv(players)
 
     await interaction.response.send_message(f'{interaction.user} placed a {amount} gold bet on {parlay} in \'{match_obj.match_name}\'')
 ########################################################################################################################
@@ -197,6 +206,42 @@ async def show_bets(interaction: discord.Interaction, match: str):
             embed = discord.Embed(title=f'{match}',
                               description=f'{bet.gambler} - {bet.wager} on {bet.parlay.name}')
         embeds.append(embed)
+    if embeds:
+        await interaction.response.send_message(embeds=embeds)
+    else:
+        await interaction.response.send_message('No bets found')
+########################################################################################################################
+@client.tree.command(name='resolve_bets', description='resolves all bets placed on a match', guild=GUILD_ID)
+@app_commands.autocomplete(match=match_autocomplete, winner=parlay_autocomplete)
+async def resolve_bets(interaction: discord.Interaction, match: str, winner: str):
+    Player.load_players_from_csv(players)   #Refresh the players, matches, and bets lists
+    Match.load_matches_from_csv(matches,players)
+    Bet.load_bets_from_csv(bets,matches,players)
+    temp_bets = bets[:]
+    embeds = []
+    while temp_bets:        #for each bet, see if the bet is in regard to the desired match
+        temp_bet = temp_bets.pop()
+        if temp_bet.match_name == match:
+            if temp_bet.parlay.name == winner:   #check to see if the parlay was the winner
+                for player in players:      #if the parlay is the winner, find the player who placed the bet in the player list
+                    if player.name == temp_bet.gambler:
+                        player.coins += int(temp_bet.wager)     #add the wager amount to the players coins and create an embed
+                        embed = discord.Embed(title=f'{player.name}',
+                              description=f' won {temp_bet.wager} coins')
+                        embeds.append(embed)
+                        bets.remove(temp_bet)
+                    else:
+                        print('Couldnt find player')
+            else:
+                for player in players:  #since the parlay was the loser, find the player who placed the bet in the player list
+                    if player.name == temp_bet.gambler:
+                        embed = discord.Embed(title=f'{player.name}',
+                              description=f'lost {temp_bet.wager} coins')
+                        embeds.append(embed)
+                        bets.remove(temp_bet)
+                    else:
+                        print('Couldnt find player')
+    Bet.update_csv(bets)
     if embeds:
         await interaction.response.send_message(embeds=embeds)
     else:
