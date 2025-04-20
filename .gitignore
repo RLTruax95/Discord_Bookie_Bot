@@ -3,3 +3,5 @@ System_Config.py
 players.txt
 matches.txt
 bets.txt
+.idea/misc.xml
+.venv/
