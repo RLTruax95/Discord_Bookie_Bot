@@ -8,7 +8,7 @@ class Bet:
     def __init__(self, match: Match, parlay, wager: int, gambler):
         self.match_name = match.match_name
         self.parlay = parlay
-        self.wager = wager
+        self.wager: int = wager
         self.gambler = gambler
 
     def save_to_csv(self, bet_list):
