@@ -2,11 +2,11 @@ import csv
 import os
 
 class Player:
-    def __init__(self, name, faction, TV, coins):
+    def __init__(self, name, faction, TV: int, coins: int):
         self.name = name
         self.faction = faction
-        self.TV = TV
-        self.coins = coins
+        self.TV : int = TV
+        self.coins : int= coins
         self.wins = 0
         self.draws = 0
         self.losses = 0
