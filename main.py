@@ -1,4 +1,5 @@
 import discord
+import System_Config
 from discord.ext import commands
 from discord import app_commands
 
@@ -43,7 +44,7 @@ intents = discord.Intents.default()
 intents.message_content = True
 client = Client(command_prefix='!', intents=intents)
 
-GUILD_ID = discord.Object(id = 806414853749211186)
+GUILD_ID = discord.Object(id = System_Config.guild_id())
 ########################################################################################################################
 @client.tree.command(name='add_player', description='Add player to the tournament', guild=GUILD_ID)
 async def add_player(interaction: discord.Interaction, name: discord.Member, faction: str, tv: int, coins: int):
@@ -201,4 +202,4 @@ async def show_bets(interaction: discord.Interaction, match: str):
     else:
         await interaction.response.send_message('No bets found')
 ########################################################################################################################
-client.run('MTM1ODk2MDk4NTY2MjI5MjExMg.GMIq8J.Dn4fTHERIXtEAFabwfXdvo-tZqmIj3Yh9wlL9U')
+client.run(System_Config.user_id())
