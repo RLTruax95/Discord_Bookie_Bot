@@ -43,10 +43,10 @@ client = Client(command_prefix='!', intents=intents)
 GUILD_ID = discord.Object(id = System_Config.guild_id())
 ########################################################################################################################
 @client.tree.command(name='add_player', description='Add player to the tournament', guild=GUILD_ID)
-async def add_player(interaction: discord.Interaction, name: discord.Member, faction: str, tv: int, coins: int):
-    player = Player(name.name, faction, tv, coins)
+async def add_player(interaction: discord.Interaction, faction: str, tv: int, coins: int):
+    player = Player(interaction.user, faction, tv, coins)
     player.save_to_csv(players)
-    await interaction.response.send_message(f'{name}\'s {faction} team added to player list')
+    await interaction.response.send_message(f'{interaction.user}\'s {faction} team added to player list')
 ########################################################################################################################
 @client.tree.command(name='add_win', description='Add a win to the players record', guild=GUILD_ID)
 async def add_win(interaction: discord.Interaction):
